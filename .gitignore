@@ -1,42 +1,9 @@
 ```
 # Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
-.venv/
-pip-log.txt
-pip-delete-this-directory.txt
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.log
-.DS_Store
-Thumbs.db
-
-# Testing
-.pytest_cache/
-.hypothesis/
-
-# Local configuration
-.env
-.env.local
-*.env.*
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Distribution / packaging
+*.py[cod]
+*$py.class
+*.so
 .Python
 build/
 develop-eggs/
@@ -53,14 +20,35 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+venv/
+ENV/
+env.bak/
+venv.bak/
 
-# Documentation
-docs/_build/
+# Environment
+.env
+.env.local
+.env.*
 
-# Jupyter Notebook
-.ipynb_checkpoints
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
 
 # Coverage
-htmlcov/
 .coverage
+coverage/
+htmlcov/
+
+# Testing
+.pytest_cache/
+.mypy_cache/
+
+# OS
+.DS_Store
+Thumbs.db
 ```
