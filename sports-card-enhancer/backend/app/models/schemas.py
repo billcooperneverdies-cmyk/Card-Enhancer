@@ -43,6 +43,16 @@ class BlemishDetection(BaseModel):
     severity: str = Field(..., description="low, medium, high")
 
 
+class SRModelChoice(str, Enum):
+    """Super-resolution model choices for upscaling."""
+    REAL_ESRGAN_X4PLUS = "real_esrgan_x4plus"  # Best general purpose
+    REAL_ESRNET_X4PLUS = "real_esrnet_x4plus"  # Conservative, less artifacts
+    REAL_ESRGAN_ANIME = "real_esrgan_anime_6b"  # Anime/illustrations
+    REAL_ESRGAN_X2PLUS = "real_esrgan_x2plus"  # 2x faster upscaling
+    ANIME_VIDEO_V3 = "anime_video_v3"  # Lightweight for video
+    GENERAL_X4V3 = "general_x4v3"  # General with denoise control
+
+
 class EnhancementSettings(BaseModel):
     """User-configurable enhancement settings."""
     blemish_removal: bool = True
@@ -63,6 +73,10 @@ class EnhancementSettings(BaseModel):
     
     upscaling: bool = False
     upscale_factor: int = Field(2, ge=1, le=4)
+    sr_model: SRModelChoice = Field(
+        SRModelChoice.REAL_ESRGAN_X4PLUS,
+        description="Super-resolution model to use for upscaling"
+    )
     
     preserve_holographic: bool = True
     output_format: str = Field("png", pattern="^(png|jpg|webp|tiff)$")

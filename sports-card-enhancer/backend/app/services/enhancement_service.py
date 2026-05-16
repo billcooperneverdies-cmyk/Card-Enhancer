@@ -7,7 +7,19 @@ import logging
 
 from app.utils.image_utils import ImageProcessor, ImageEnhancer
 from app.services.blemish_detector import BlemishDetector, BlemishRemover
-from app.models.schemas import EnhancementSettings, BlemishDetection
+from app.models.schemas import EnhancementSettings, BlemishDetection, SRModelChoice
+from app.services.real_esrgan_service import RealESRGANService, SRModelType
+
+
+# Mapping from API schema SRModelChoice to service SRModelType
+SR_MODEL_MAPPING = {
+    SRModelChoice.REAL_ESRGAN_X4PLUS: SRModelType.REAL_ESRGAN_X4PLUS,
+    SRModelChoice.REAL_ESRNET_X4PLUS: SRModelType.REAL_ESRNET_X4PLUS,
+    SRModelChoice.REAL_ESRGAN_ANIME: SRModelType.REAL_ESRGAN_X4PLUS_ANIME,
+    SRModelChoice.REAL_ESRGAN_X2PLUS: SRModelType.REAL_ESRGAN_X2PLUS,
+    SRModelChoice.ANIME_VIDEO_V3: SRModelType.ANIME_VIDEO_V3,
+    SRModelChoice.GENERAL_X4V3: SRModelType.GENERAL_X4V3,
+}
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,12 +28,34 @@ logger = logging.getLogger(__name__)
 class EnhancementService:
     """Main service for enhancing sports card images."""
     
-    def __init__(self):
+    def __init__(self, sr_model_choice: SRModelChoice = SRModelChoice.REAL_ESRGAN_X4PLUS):
+        """
+        Initialize the EnhancementService.
+        
+        Args:
+            sr_model_choice: The super-resolution model to use for upscaling.
+                            Maps to corresponding RealESRGAN model architecture.
+        """
         self.image_processor = ImageProcessor()
         self.image_enhancer = ImageEnhancer()
         self.blemish_detector = BlemishDetector()
         self.blemish_remover = BlemishRemover()
-        self.upscaler = None  # Lazy load
+        
+        # Map API schema enum to service enum
+        sr_model_type = SR_MODEL_MAPPING.get(
+            sr_model_choice, 
+            SRModelType.REAL_ESRGAN_X4PLUS
+        )
+        
+        # Initialize Real-ESRGAN service with configurable model type
+        # Lazy loading: model weights are downloaded/loaded only on first use
+        self.sr_service = RealESRGANService(
+            model_type=sr_model_type,
+            tile_size=256,  # Enable tiling to prevent OOM on large images
+            tile_pad=10,
+            use_half_precision=True  # Use FP16 for faster inference on supported GPUs
+        )
+        logger.info(f"EnhancementService initialized with SR model: {sr_model_choice.value} ({sr_model_type.value})")
         
     def enhance(self, image_path: str, settings: EnhancementSettings) -> Tuple[np.ndarray, list]:
         """
@@ -141,39 +175,50 @@ class EnhancementService:
         return enhanced, blemishes
     
     def _upscale(self, image: np.ndarray, factor: int) -> np.ndarray:
-        """Upscale image using super-resolution."""
-        # Try to use Real-ESRGAN if available
-        if self.upscaler is None:
-            try:
-                from realesrgan import RealESRGANer
-                from basicsr.archs.rrdbnet_arch import RRDBNet
-                
-                model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64,
-                               num_block=23, num_grow_ch=32, scale=4)
-                
-                self.upscaler = RealESRGANer(
-                    scale=4,
-                    model_path='https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth',
-                    model=model,
-                    tile=0,
-                    pre_pad=0,
-                    half=True
-                )
-            except Exception as e:
-                logger.warning(f"Could not load Real-ESRGAN: {e}")
-                self.upscaler = None
+        """
+        Upscale image using Real-ESRGAN super-resolution with fallback.
         
-        if self.upscaler:
-            try:
-                output, _ = self.upscaler.enhance(image, outscale=factor)
-                return output
-            except Exception as e:
-                logger.warning(f"Real-ESRGAN enhancement failed: {e}")
+        Data flow:
+            1. Input image (BGR format from OpenCV) -> RealESRGANService
+            2. Model performs SR inference on GPU (or CPU fallback)
+            3. Output returned in BGR format for compatibility with rest of pipeline
         
-        # Fallback to Lanczos interpolation
-        h, w = image.shape[:2]
-        new_h, new_w = h * factor, w * factor
-        return cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_LANCZOS4)
+        Args:
+            image: Input image as numpy array in BGR format
+            factor: Target upscale factor (e.g., 2, 4)
+        
+        Returns:
+            Upscaled image as numpy array in BGR format
+        
+        Error handling:
+            - Invalid input: ValueError raised
+            - Model not loaded: Auto-loads on first use
+            - CUDA OOM: Falls back to smaller tiles or CPU
+            - Missing dependencies: Falls back to Lanczos interpolation
+        """
+        logger.debug(f"Attempting Real-ESRGAN upscaling with factor {factor}")
+        
+        # Use the new service with automatic fallback
+        try:
+            upscaled_image, used_sr = self.sr_service.upscale_with_fallback(
+                image=image,
+                outscale=float(factor),
+                fallback_method='lanczos'
+            )
+            
+            if used_sr:
+                logger.info(f"Successfully upscaled using Real-ESRGAN ({factor}x)")
+            else:
+                logger.warning(f"Real-ESRGAN unavailable, used Lanczos fallback ({factor}x)")
+            
+            return upscaled_image
+            
+        except Exception as e:
+            # Final fallback - should rarely reach here due to upscale_with_fallback
+            logger.error(f"All SR methods failed, using basic interpolation: {e}")
+            h, w = image.shape[:2]
+            new_w, new_h = int(w * factor), int(h * factor)
+            return cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_LANCZOS4)
     
     def _convert_blemishes(self, blemishes: list) -> list:
         """Convert internal blemish objects to API schema."""

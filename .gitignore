@@ -1,70 +1,66 @@
 ```
-# Dependencies
-node_modules/
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
 venv/
 .venv/
-__pycache__/
-.mypy_cache/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.DS_Store
+Thumbs.db
+
+# Testing
 .pytest_cache/
-dist/
-build/
-target/
-.gradle/
+.hypothesis/
 
-# Compiled files
-*.pyc
-*.class
-*.o
-*.exe
-*.dll
-*.so
-*.a
-*.obj
-*.out
+# Local configuration
+.env
+.env.local
+*.env.*
 
-# Editors
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# System files
-.DS_Store
-Thumbs.db
-.env
-.env.local
-*.env.*
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Logs and temp files
-*.log
-*.tmp
+# Documentation
+docs/_build/
+
+# Jupyter Notebook
+.ipynb_checkpoints
 
 # Coverage
-coverage/
 htmlcov/
 .coverage
-
-# Compressed files
-*.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
 ```
