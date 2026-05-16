@@ -8,6 +8,7 @@ import shutil
 import zipfile
 import io
 import tempfile
+import uuid
 from pathlib import Path
 from typing import List, Optional, Tuple
 from datetime import datetime, timedelta
@@ -156,6 +157,11 @@ async def upload_images(
     rejected_reasons = []
     saved_paths = []
     
+    # Create upload directory with job_id
+    job_id = str(uuid.uuid4())
+    upload_dir = Path(settings.UPLOAD_DIR) / job_id
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    
     for file in files:
         # Check file extension
         ext = os.path.splitext(file.filename)[1].lower()
@@ -173,15 +179,20 @@ async def upload_images(
         
         # Save file
         try:
-            upload_dir = Path(settings.UPLOAD_DIR) / job_id
-            upload_dir.mkdir(parents=True, exist_ok=True)
-            
             file_path = upload_dir / file.filename
+            
+            # Handle duplicate filenames
+            base, ext = os.path.splitext(file.filename)
+            counter = 1
+            while file_path.exists():
+                file_path = upload_dir / f"{base}_{counter}{ext}"
+                counter += 1
+            
             with open(file_path, "wb") as f:
                 f.write(content)
             
             accepted_files.append(file.filename)
-            saved_paths.append(file_path)
+            saved_paths.append(str(file_path))
         
         except Exception as e:
             rejected_files.append(file.filename)
