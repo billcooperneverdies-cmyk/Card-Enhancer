@@ -1,0 +1,35 @@
+# FastAPI and web framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+websockets>=12.0
+python-socketio>=5.11.0
+
+# Image processing
+opencv-python>=4.9.0.76
+pillow>=10.2.0
+numpy>=1.26.3
+scikit-image>=0.22.0
+
+# Deep Learning (optional - for advanced features)
+torch>=2.1.2
+torchvision>=0.16.2
+onnxruntime>=1.16.3
+
+# Super-resolution (optional)
+# realesrgan>=0.3.0
+# basicsr>=1.4.2
+# facexlib>=0.3.0
+
+# Async processing
+aiofiles>=23.2.1
+celery>=5.3.6
+redis>=5.0.1
+
+# Utilities
+pydantic>=2.5.3
+pydantic-settings>=2.1.0
+python-dotenv>=1.0.0
+httpx>=0.26.0
+aiohttp>=3.9.1
+tqdm>=4.66.1

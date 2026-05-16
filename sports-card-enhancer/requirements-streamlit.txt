@@ -1,0 +1,5 @@
+streamlit>=1.31.0
+opencv-python>=4.9.0.76
+pillow>=10.2.0
+numpy>=1.26.3
+scikit-image>=0.22.0
