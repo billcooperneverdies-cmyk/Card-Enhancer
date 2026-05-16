@@ -21,29 +21,11 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual environments
+# Virtual Environment
 venv/
-env/
 ENV/
-.venv/
 env.bak/
-runtime.txt
-
-# Node.js
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnp.cjs
-.pnp.loader.mjs
-
-# TypeScript
-*.tsbuildinfo
-*.tsx
-
-# Vite
-!.vite/
-.vite/
+.venv/
 
 # IDE
 .vscode/
@@ -51,20 +33,20 @@ yarn-error.log*
 *.swp
 *.swo
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Environment variables
-.env
-.env.local
-*.env
-
 # Logs
 *.log
 
+# Environment
+.env
+.env.local
+*.env.*
+
 # Coverage
+.coverage
 coverage/
 htmlcov/
-.coverage
+
+# Testing
+.pytest_cache/
+.mypy_cache/
 ```
