@@ -50,7 +50,7 @@ class FeatureExtractor:
         # 1. Finish Type: Matte(0) vs Foil/Holographic(1)
         bright_mask = l_chan > 235
         bright_ratio = float(bright_mask.mean())
-        lap_var = float(cv2.Laplacian(l_chan, cv2.CV_64F).var())
+        lap_var = float(cv2.Laplacian(l_chan.astype(np.float64), cv2.CV_64F).var())
         finish = float(bright_ratio > 0.04 and lap_var > 350)
         
         # 2. Background Contrast: RMS contrast normalized to [0,1]
