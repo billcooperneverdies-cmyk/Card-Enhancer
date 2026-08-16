@@ -14,6 +14,7 @@ from typing import List, Optional, Tuple
 from datetime import datetime, timedelta
 import json
 import asyncio
+from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.models.schemas import (
@@ -74,8 +75,20 @@ def extract_zip_images(zip_content: bytes, extract_dir: Path) -> List[str]:
     
     return extracted_paths
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Start/stop the batch processor with the application lifecycle."""
+    await batch_processor.start()
+    try:
+        yield
+    finally:
+        await batch_processor.stop()
+
+
 # Create FastAPI app
 app = FastAPI(
+    lifespan=lifespan,
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     description="AI-powered sports card image enhancement API",
@@ -86,7 +99,7 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure for production
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -98,18 +111,6 @@ app.mount("/outputs", StaticFiles(directory=str(settings.OUTPUT_DIR)), name="out
 
 # Store active WebSocket connections
 active_connections: dict = {}
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Start the batch processor on startup."""
-    await batch_processor.start()
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Stop the batch processor on shutdown."""
-    await batch_processor.stop()
 
 
 @app.get("/")

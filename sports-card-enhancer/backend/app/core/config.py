@@ -36,6 +36,14 @@ class Settings(BaseSettings):
     # Server settings
     HOST: str = "0.0.0.0"
     PORT: int = 8000
+
+    # CORS settings — override via CORS_ORIGINS env var (comma-separated)
+    CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        """Parse CORS_ORIGINS into a list of allowed origins."""
+        return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
     
     # File upload settings
     MAX_FILE_SIZE: int = 50 * 1024 * 1024  # 50MB

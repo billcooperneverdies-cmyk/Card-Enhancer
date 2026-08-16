@@ -20,6 +20,7 @@ import os
 import torch
 import cv2
 import numpy as np
+from enum import Enum
 from typing import Optional, Tuple, List
 from pathlib import Path
 import logging
@@ -36,6 +37,21 @@ try:
 except ImportError:
     REAL_ESRGAN_AVAILABLE = False
     logger.warning("Real-ESRGAN dependencies not found. Enhancement will fallback to OpenCV Lanczos interpolation.")
+
+
+class SRModelType(str, Enum):
+    """Supported super-resolution model variants.
+
+    Values match the official Real-ESRGAN release weight names
+    (and the keys of RealESRGANService.MODEL_CONFIGS).
+    """
+
+    REAL_ESRGAN_X4PLUS = "RealESRGAN_x4plus"
+    REAL_ESRNET_X4PLUS = "RealESRNet_x4plus"
+    REAL_ESRGAN_X4PLUS_ANIME = "RealESRGAN_x4plus_anime_6B"
+    REAL_ESRGAN_X2PLUS = "RealESRGAN_x2plus"
+    ANIME_VIDEO_V3 = "realesr-animevideov3"
+    GENERAL_X4V3 = "realesr-general-x4v3"
 
 
 class RealESRGANService:
@@ -84,18 +100,48 @@ class RealESRGANService:
             "model_path": "RealESRGAN_x4plus_anime_6B.pth",
             "description": "Optimized for anime/illustration style cards"
         },
+        "RealESRGAN_x2plus": {
+            "type": "realesrgan",
+            "scale": 2,
+            "model_path": "RealESRGAN_x2plus.pth",
+            "description": "General purpose x2 upscaler (GAN-based)"
+        },
+        "realesr-animevideov3": {
+            "type": "realesrgan",
+            "scale": 4,
+            "model_path": "realesr-animevideov3.pth",
+            "description": "Lightweight anime-video model (fast, small)"
+        },
+        "realesr-general-x4v3": {
+            "type": "realesrgan",
+            "scale": 4,
+            "model_path": "realesr-general-x4v3.pth",
+            "description": "General x4 model with adjustable denoise strength"
+        },
     }
 
-    def __init__(self, weights_dir: str = "weights", tile_size: int = 0, tile_pad: int = 10):
+    def __init__(
+        self,
+        model_type: "SRModelType" = None,
+        weights_dir: str = "weights",
+        tile_size: int = 0,
+        tile_pad: int = 10,
+        use_half_precision: bool = False,
+    ):
         """
         Initialize the SR Service.
         
         Args:
+            model_type: Default super-resolution model variant (SRModelType).
+                        Falls back to REAL_ESRGAN_X4PLUS when omitted.
             weights_dir: Directory to store/download model weights.
             tile_size: Size of tiles for inference. If 0, processes whole image (risky for VRAM).
                        Recommended: 200-400 for free-tier GPUs.
             tile_pad: Padding overlap between tiles to avoid seam artifacts.
+            use_half_precision: Request FP16 inference (applied only when running on CUDA).
         """
+        self.model_type = model_type or SRModelType.REAL_ESRGAN_X4PLUS
+        self.use_half_precision = use_half_precision
         self.weights_dir = Path(weights_dir)
         self.weights_dir.mkdir(exist_ok=True)
         
@@ -116,7 +162,7 @@ class RealESRGANService:
             raise ValueError(f"Unknown model: {model_name}. Available: {list(self.MODEL_CONFIGS.keys())}")
         return self.weights_dir / self.MODEL_CONFIGS[model_name]["model_path"]
 
-    def load_model(self, model_name: str = "RealESRGAN_x4plus"):
+    def load_model(self, model_name: str = None):
         """
         Lazily load the specified super-resolution model.
         
@@ -136,6 +182,9 @@ class RealESRGANService:
             RuntimeError: If dependencies missing or model loading fails
             FileNotFoundError: If model weights not found
         """
+        if model_name is None:
+            model_name = self.model_type.value
+
         if model_name in self._model_cache:
             logger.debug(f"Model {model_name} already loaded from cache")
             return self._model_cache[model_name]
@@ -178,7 +227,7 @@ class RealESRGANService:
                     tile=self.tile_size,  # Critical for memory management
                     tile_pad=self.tile_pad,
                     pre_pad=0,
-                    half=True if self.device.type == 'cuda' else False,  # FP16 on GPU for speed
+                    half=self.use_half_precision and self.device.type == 'cuda',  # FP16 only on GPU
                     device=self.device,
                 )
             

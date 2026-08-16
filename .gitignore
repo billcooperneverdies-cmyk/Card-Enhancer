@@ -1,4 +1,3 @@
-```
 # Python
 __pycache__/
 *.py[cod]
@@ -51,4 +50,11 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
-```
+
+# ML caches & pipeline artifacts
+.dcpt_cache/
+*.pkl
+uploads/
+outputs/
+temp/
+models/
