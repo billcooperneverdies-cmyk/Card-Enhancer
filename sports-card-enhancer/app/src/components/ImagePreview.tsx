@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Download, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2, RotateCcw, Sparkles } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { ProcessingJob } from '../App';

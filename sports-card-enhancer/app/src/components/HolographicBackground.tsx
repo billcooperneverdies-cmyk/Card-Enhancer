@@ -1,5 +1,5 @@
-import { useRef, useMemo, useCallback } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { useRef, useMemo } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 // Advanced holographic grid with wave distortion
@@ -345,7 +345,7 @@ function DataStreams() {
   const lineCount = 20;
 
   const lines = useMemo(() => {
-    return Array.from({ length: lineCount }, (_, i) => ({
+    return Array.from({ length: lineCount }, () => ({
       x: (Math.random() - 0.5) * 20,
       z: (Math.random() - 0.5) * 10 - 5,
       speed: Math.random() * 0.05 + 0.02,
